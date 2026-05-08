@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/session.js" defer></script>
+</head>
+<body class="app-page">
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/logo.svg" alt="logo">
+      <h2>CampusHub</h2>
+    </div>
+
+    <div class="nav-section">Menu Utama</div>
+    <ul>
+      <li class="active"><span class="nav-icon">📊</span> Dashboard</li>
+      <li onclick="location.href='pengumuman.html'"><span class="nav-icon">📢</span> Pengumuman</li>
+      <li onclick="location.href='forum.html'"><span class="nav-icon">💬</span> Forum</li>
+      <li onclick="location.href='mahasiswa.html'"><span class="nav-icon">👥</span> Mahasiswa</li>
+      <li class="logout" onclick="logout()"><span class="nav-icon">🚪</span> Logout</li>
+    </ul>
+  </div>
+
+  <div class="main">
+
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Dashboard Admin</h1>
+        <p class="page-subtitle">Selamat datang! Ini ringkasan aktivitas kampus hari ini.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="status-badge">
+          <span class="dot"></span> Session aktif
+        </div>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="cards">
+      <div class="card" style="animation-delay:.04s">
+        <div class="card-accent" style="background:#4f46e5"></div>
+        <div class="card-icon" style="background:#ede9fe">👤</div>
+        <h3>Total Admin</h3>
+        <p id="totalAdmin">—</p>
+        <div class="card-trend" style="color:#4f46e5">↑ Aktif</div>
+      </div>
+      <div class="card" style="animation-delay:.08s">
+        <div class="card-accent" style="background:#0891b2"></div>
+        <div class="card-icon" style="background:#e0f2fe">🎓</div>
+        <h3>Mahasiswa</h3>
+        <p id="totalMahasiswa">—</p>
+        <div class="card-trend" style="color:#0891b2">↑ Terdaftar</div>
+      </div>
+      <div class="card" style="animation-delay:.12s">
+        <div class="card-accent" style="background:#d97706"></div>
+        <div class="card-icon" style="background:#fef3c7">📅</div>
+        <h3>Total Jadwal</h3>
+        <p id="totalJadwal">—</p>
+        <div class="card-trend" style="color:#d97706">Minggu ini</div>
+      </div>
+      <div class="card" style="animation-delay:.16s">
+        <div class="card-accent" style="background:#059669"></div>
+        <div class="card-icon" style="background:#d1fae5">📢</div>
+        <h3>Pengumuman</h3>
+        <p id="totalPengumuman">—</p>
+        <div class="card-trend" style="color:#059669">↑ Aktif</div>
+      </div>
+      <div class="card" style="animation-delay:.2s">
+        <div class="card-accent" style="background:#7c3aed"></div>
+        <div class="card-icon" style="background:#f3e8ff">💬</div>
+        <h3>Postingan Forum</h3>
+        <p id="totalPost">—</p>
+        <div class="card-trend" style="color:#7c3aed">Perlu moderasi</div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section-header">
+      <h2>Aksi Cepat</h2>
+    </div>
+
+    <div class="quick-actions" style="margin-bottom:28px">
+      <div class="action-card" onclick="location.href='pengumuman.html'">
+        <div class="action-icon" style="background:#ede9fe">📢</div>
+        <div>
+          <div class="action-label">Buat Pengumuman</div>
+          <div class="action-sub">Kirim info ke mahasiswa</div>
+        </div>
+      </div>
+      <div class="action-card" onclick="location.href='mahasiswa.html'">
+        <div class="action-icon" style="background:#e0f2fe">👥</div>
+        <div>
+          <div class="action-label">Kelola Mahasiswa</div>
+          <div class="action-sub">Lihat & hapus akun</div>
+        </div>
+      </div>
+      <div class="action-card" onclick="location.href='forum.html'">
+        <div class="action-icon" style="background:#f3e8ff">💬</div>
+        <div>
+          <div class="action-label">Moderasi Forum</div>
+          <div class="action-sub">Tinjau postingan baru</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="section-header">
+      <h2>Aktivitas Terakhir</h2>
+    </div>
+
+    <div class="activity-feed">
+      <div class="activity-item">
+        <div class="activity-avatar" style="background:#ede9fe;color:#4f46e5">MH</div>
+        <div class="activity-body">
+          <strong>Mahasiswa baru mendaftar</strong>
+          <span>Akun mahasiswa baru berhasil dibuat</span>
+        </div>
+        <span class="activity-time">2 mnt lalu</span>
+      </div>
+      <div class="activity-item">
+        <div class="activity-avatar" style="background:#d1fae5;color:#059669">PG</div>
+        <div class="activity-body">
+          <strong>Pengumuman dipublikasikan</strong>
+          <span>Jadwal UAS Semester Genap 2025</span>
+        </div>
+        <span class="activity-time">1 jam lalu</span>
+      </div>
+      <div class="activity-item">
+        <div class="activity-avatar" style="background:#f3e8ff;color:#7c3aed">FR</div>
+        <div class="activity-body">
+          <strong>Postingan forum baru</strong>
+          <span>Pertanyaan tentang pengumpulan tugas</span>
+        </div>
+        <span class="activity-time">3 jam lalu</span>
+      </div>
+      <div class="activity-item">
+        <div class="activity-avatar" style="background:#fef3c7;color:#d97706">JD</div>
+        <div class="activity-body">
+          <strong>Jadwal diperbarui</strong>
+          <span>Jadwal kuliah minggu depan telah diubah</span>
+        </div>
+        <span class="activity-time">Kemarin</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    async function loadDashboard() {
+      const [admin, mahasiswa, jadwal, pengumuman, posts] = await Promise.all([
+        supabaseClient.from('users').select('*', { count: 'exact' }).eq('role', 'admin'),
+        supabaseClient.from('users').select('*', { count: 'exact' }).eq('role', 'mahasiswa'),
+        supabaseClient.from('schedules').select('*', { count: 'exact' }),
+        supabaseClient.from('announcements').select('*', { count: 'exact' }),
+        supabaseClient.from('posts').select('*', { count: 'exact' }),
+      ]);
+
+      const set = (id, val) => document.getElementById(id).textContent = val ?? 0;
+      set('totalAdmin', admin.count);
+      set('totalMahasiswa', mahasiswa.count);
+      set('totalJadwal', jadwal.count);
+      set('totalPengumuman', pengumuman.count);
+      set('totalPost', posts.count);
+    }
+
+    function logout() {
+      localStorage.removeItem('ssid');
+      window.location.href = 'login.html';
+    }
+
+    loadDashboard();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahasiswa — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+</head>
+<body class="app-page">
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/logo.svg" alt="logo">
+      <h2>CampusHub</h2>
+    </div>
+    <div class="nav-section">Menu Utama</div>
+    <ul>
+      <li onclick="location.href='dashboard.html'"><span class="nav-icon">📊</span> Dashboard</li>
+      <li onclick="location.href='pengumuman.html'"><span class="nav-icon">📢</span> Pengumuman</li>
+      <li onclick="location.href='forum.html'"><span class="nav-icon">💬</span> Forum</li>
+      <li class="active"><span class="nav-icon">👥</span> Mahasiswa</li>
+      <li class="logout" onclick="logout()"><span class="nav-icon">🚪</span> Logout</li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Data Mahasiswa</h1>
+        <p class="page-subtitle">Kelola seluruh akun mahasiswa terdaftar</p>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Daftar Mahasiswa</h2>
+    </div>
+
+    <div class="list-grid" id="mahasiswaList">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadMahasiswa() {
+      const { data } = await supabaseClient.from('users').select('*').eq('role', 'mahasiswa');
+      const el = document.getElementById('mahasiswaList');
+      if (!data || !data.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>Belum ada mahasiswa terdaftar.</p></div>';
+        return;
+      }
+      el.innerHTML = data.map((item, i) => `
+        <div class="jadwal-card" style="animation-delay:${i*.05}s">
+          <div style="width:40px;height:40px;border-radius:50%;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#4f46e5;flex-shrink:0">
+            ${item.nama ? item.nama.charAt(0).toUpperCase() : '?'}
+          </div>
+          <div class="jadwal-card-body">
+            <h3>${item.nama}</h3>
+            <p>${item.email}</p>
+            <span class="tag tag-indigo">🎓 Mahasiswa</span>
+          </div>
+          <button class="btn-danger" onclick="hapusMahasiswa(${item.id})">Hapus</button>
+        </div>`).join('');
+    }
+
+    async function hapusMahasiswa(id) {
+      if (!confirm('Hapus mahasiswa ini?')) return;
+      await supabaseClient.from('users').delete().eq('id', id);
+      loadMahasiswa();
+    }
+
+    function logout() { localStorage.removeItem('ssid'); window.location.href = 'login.html'; }
+    loadMahasiswa();
+  </script>
+</body>
+</html>

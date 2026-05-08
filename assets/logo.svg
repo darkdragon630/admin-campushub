@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.25)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer rounded square background -->
+  <rect width="200" height="200" rx="44" fill="url(#bg)"/>
+
+  <!-- Shine overlay -->
+  <rect width="200" height="200" rx="44" fill="url(#shine)"/>
+
+  <!-- Mortarboard cap - flat top -->
+  <rect x="60" y="72" width="80" height="10" rx="3" fill="white" opacity="0.95"/>
+
+  <!-- Cap top (small square tilted) -->
+  <polygon points="100,50 140,68 100,72 60,68" fill="white"/>
+
+  <!-- Tassel string -->
+  <line x1="140" y1="68" x2="140" y2="94" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.85"/>
+  <circle cx="140" cy="98" r="4" fill="white" opacity="0.85"/>
+
+  <!-- Book pages (open book beneath the cap) -->
+  <path d="M52 105 Q76 98 100 105 Q124 98 148 105 L148 140 Q124 133 100 140 Q76 133 52 140 Z" fill="white" opacity="0.92"/>
+
+  <!-- Book spine center line -->
+  <line x1="100" y1="105" x2="100" y2="140" stroke="url(#bg)" stroke-width="2.5" opacity="0.6"/>
+
+  <!-- Left page lines -->
+  <line x1="62" y1="115" x2="95" y2="112" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <line x1="62" y1="122" x2="95" y2="119" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <line x1="62" y1="129" x2="95" y2="126" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- Right page lines -->
+  <line x1="138" y1="112" x2="105" y2="112" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <line x1="138" y1="119" x2="105" y2="119" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+  <line x1="138" y1="126" x2="105" y2="126" stroke="#6366f1" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- Network dots (connectivity - 3 small circles bottom row) -->
+  <circle cx="76" cy="158" r="6" fill="white" opacity="0.7"/>
+  <circle cx="100" cy="158" r="6" fill="white" opacity="0.9"/>
+  <circle cx="124" cy="158" r="6" fill="white" opacity="0.7"/>
+  <line x1="82" y1="158" x2="94" y2="158" stroke="white" stroke-width="2" opacity="0.5"/>
+  <line x1="106" y1="158" x2="118" y2="158" stroke="white" stroke-width="2" opacity="0.5"/>
+</svg>

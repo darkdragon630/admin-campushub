@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/login.js" defer></script>
+</head>
+<body class="auth-page">
+
+  <!-- Left panel (desktop) -->
+  <div class="auth-left">
+    <div class="auth-left-blob b1"></div>
+    <div class="auth-left-blob b2"></div>
+    <div class="auth-left-content">
+      <img src="assets/logo.svg" alt="CampusHub Logo">
+      <h2>CampusHub</h2>
+      <p>Platform manajemen kampus modern untuk admin dan mahasiswa.</p>
+    </div>
+  </div>
+
+  <!-- Right panel (form) -->
+  <div class="auth-right">
+    <div class="auth-form-wrap">
+
+      <!-- Mobile logo -->
+      <div class="auth-mobile-logo">
+        <img src="assets/logo.svg" alt="logo">
+        <span>CampusHub</span>
+      </div>
+
+      <h1>Masuk ke Akun</h1>
+      <p class="subtitle">Selamat datang kembali, Admin 👋</p>
+
+      <div class="field-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="admin@kampus.ac.id">
+      </div>
+
+      <div class="field-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Masukkan password">
+      </div>
+
+      <button class="btn-primary" onclick="login()">Masuk ke Dashboard →</button>
+
+      <div class="auth-footer">
+        Belum punya akun? <a href="register.html">Daftar di sini</a>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

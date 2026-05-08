@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Forum — CampusHub</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+</head>
+<body class="app-page">
+
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <img src="assets/logo.svg" alt="logo">
+      <h2>CampusHub</h2>
+    </div>
+    <div class="nav-section">Menu Utama</div>
+    <ul>
+      <li onclick="location.href='dashboard.html'"><span class="nav-icon">📊</span> Dashboard</li>
+      <li onclick="location.href='pengumuman.html'"><span class="nav-icon">📢</span> Pengumuman</li>
+      <li class="active"><span class="nav-icon">💬</span> Forum</li>
+      <li onclick="location.href='mahasiswa.html'"><span class="nav-icon">👥</span> Mahasiswa</li>
+      <li class="logout" onclick="logout()"><span class="nav-icon">🚪</span> Logout</li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h1>Forum Mahasiswa</h1>
+        <p class="page-subtitle">Moderasi dan kelola postingan forum</p>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <h2>Semua Postingan</h2>
+    </div>
+
+    <div class="list-grid" id="forumList">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <script>
+    async function loadForum() {
+      const { data } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
+      const el = document.getElementById('forumList');
+      if (!data || !data.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Belum ada postingan di forum.</p></div>';
+        return;
+      }
+      el.innerHTML = data.map((item, i) => `
+        <div class="jadwal-card" style="animation-delay:${i*.05}s">
+          <div class="jadwal-card-body">
+            <h3>Postingan Mahasiswa</h3>
+            <p>${item.isi_post}</p>
+            <span class="tag tag-cyan">💬 Forum</span>
+          </div>
+          <button class="btn-danger" onclick="hapusPost(${item.id})">Hapus</button>
+        </div>`).join('');
+    }
+
+    async function hapusPost(id) {
+      if (!confirm('Hapus postingan ini?')) return;
+      await supabaseClient.from('posts').delete().eq('id', id);
+      loadForum();
+    }
+
+    function logout() { localStorage.removeItem('ssid'); window.location.href = 'login.html'; }
+    loadForum();
+  </script>
+</body>
+</html>
