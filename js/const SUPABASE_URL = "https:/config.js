@@ -1,2 +1,0 @@
-const SUPABASE_URL = "https://ibosuwrhjiptrwuwzshn.supabase.co"
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlib3N1d3JoamlwdHJ3dXd6c2huIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyMjM2MzYsImV4cCI6MjA5Mzc5OTYzNn0.GvSrGRKN6ta8C160kcQ-Wm-QhRaNcP3a2kzjsz1zin4"
