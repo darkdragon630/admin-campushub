@@ -22,14 +22,16 @@
 ### Admin Web
 | Fitur | Deskripsi |
 |---|---|
-| Register Admin | Buat akun admin pertama dengan validasi + enkripsi password |
-| Login Admin | Autentikasi dengan validasi input lengkap |
-| Session 24 Jam | Sesi otomatis expired, divalidasi via DB |
-| Dashboard Statistik | Ringkasan data + aktivitas terakhir real-time |
-| Kelola Pengumuman | Tambah dan hapus pengumuman kampus |
-| Moderasi Forum | Lihat dan hapus postingan mahasiswa |
-| Kelola Mahasiswa | Lihat dan hapus akun mahasiswa |
-| Logout | Hapus sesi dari localStorage dan DB sekaligus |
+| Register Admin | Buat akun admin pertama dengan validasi + enkripsi password SHA-256 |
+| Login Admin | Autentikasi dengan validasi input + loading state + Enter key support |
+| Session 24 Jam | Sesi divalidasi via kolom `ssid` + `expired_at` di DB, bukan client-side |
+| Dashboard Statistik | Ringkasan 5 data + aktivitas terakhir real-time dari 3 tabel |
+| Kelola Pengumuman | Tambah (dengan cek duplikat judul) dan hapus pengumuman |
+| Moderasi Forum | Lihat postingan beserta nama & NIM mahasiswa, hapus postingan |
+| Kelola Mahasiswa | Cari by nama/NIM/email, lihat detail, hapus akun |
+| Realtime Updates | Semua halaman update otomatis saat ada perubahan data dari APK |
+| Logout Bersih | Hapus sesi dari localStorage **dan** set null di DB sekaligus |
+| Responsif | Tampilan menyesuaikan mobile/tablet dengan hamburger menu |
 
 ### Mobile Mahasiswa *(Android)*
 | Fitur | Deskripsi |
@@ -46,14 +48,15 @@
 
 ### Frontend Web
 - **HTML5** — Struktur halaman
-- **CSS3** — Styling modern dengan CSS Variables & animasi
+- **CSS3** — Light theme, CSS Variables, animasi, responsive breakpoints
 - **JavaScript (Vanilla)** — Logic client-side tanpa framework
 - **Google Fonts** — Plus Jakarta Sans
+- **Web Crypto API** — `crypto.subtle` untuk SHA-256, `crypto.getRandomValues` untuk SSID
 
 ### Backend & Database
 - **Supabase** — Backend as a Service (BaaS)
 - **PostgreSQL** — Database relasional via Supabase
-- **Supabase Realtime** — Subscription perubahan data live
+- **Supabase Realtime** — Subscription perubahan data live (channel per tabel)
 
 ### Mobile
 - **Kotlin** — Bahasa utama Android
@@ -71,23 +74,24 @@ admin-web/
 ├── login.html          # Halaman login admin
 ├── register.html       # Halaman register admin pertama
 ├── dashboard.html      # Dashboard statistik + aktivitas realtime
-├── pengumuman.html     # Kelola pengumuman
-├── forum.html          # Moderasi forum mahasiswa
-├── mahasiswa.html      # Kelola data mahasiswa
+├── pengumuman.html     # Kelola pengumuman (cek duplikat, validasi)
+├── forum.html          # Moderasi forum + nama mahasiswa + realtime
+├── mahasiswa.html      # Kelola mahasiswa + search + realtime
 │
 ├── css/
-│   └── style.css       # Stylesheet global (light theme, CSS Variables)
+│   └── style.css       # Stylesheet global (light theme, responsive, CSS Variables)
 │
 ├── js/
 │   ├── config.js       # Konfigurasi Supabase URL & anon key
 │   ├── supabase.js     # Inisialisasi Supabase client
+│   ├── timeHelper.js   # Format waktu WIB (UTC+7 manual offset)
 │   ├── checkAdmin.js   # Cek keberadaan admin + validasi sesi (dari splash)
-│   ├── session.js      # Guard sesi untuk halaman app (defer)
-│   ├── login.js        # Logic login + generate SSID
-│   └── register.js     # Logic register + enkripsi password
+│   ├── session.js      # Guard sesi untuk halaman app
+│   ├── login.js        # Logic login + generate SSID + validasi
+│   └── register.js     # Logic register + enkripsi password + validasi
 │
 └── assets/
-    ├── logo.svg        # Logo utama (SVG, shield + mortarboard)
+    ├── logo.svg        # Logo utama (SVG, shield + mortarboard ungu)
     └── logo.png        # Logo original
 ```
 
@@ -100,11 +104,12 @@ admin-web/
 |---|---|---|
 | `id` | int8 | Primary key |
 | `nama` | text | Nama lengkap |
+| `nim` | text | Nomor Induk Mahasiswa |
 | `email` | text | Email unik |
 | `password` | text | SHA-256 hash dari password |
 | `role` | text | `admin` atau `mahasiswa` |
 | `ssid` | text | SHA-256 hash dari session token |
-| `expired_at` | timestamptz | Waktu expired sesi (24 jam) |
+| `expired_at` | timestamp | Waktu expired sesi (24 jam dari login) |
 
 ### Tabel `announcements`
 | Kolom | Tipe | Keterangan |
@@ -112,50 +117,65 @@ admin-web/
 | `id` | int8 | Primary key |
 | `judul` | text | Judul pengumuman |
 | `isi` | text | Isi pengumuman |
-| `created_at` | timestamptz | Waktu dibuat |
+| `tanggal` | timestamp | Waktu dibuat (DEFAULT now()) |
 
 ### Tabel `posts`
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | int8 | Primary key |
+| `user_id` | int8 | FK ke `users.id` |
 | `isi_post` | text | Konten postingan |
-| `created_at` | timestamptz | Waktu dibuat |
+| `created_at` | timestamp | Waktu dibuat (DEFAULT now()) |
+
+### Tabel `comments`
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | int8 | Primary key |
+| `post_id` | int8 | FK ke `posts.id` |
+| `user_id` | int8 | FK ke `users.id` |
+| `isi_komentar` | text | Isi komentar |
+| `created_at` | timestamp | Waktu dibuat (DEFAULT now()) |
 
 ### Tabel `schedules`
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | int8 | Primary key |
-| `created_at` | timestamptz | Waktu dibuat |
+| `matkul` | text | Nama mata kuliah |
+| `hari` | text | Hari kuliah |
+| `jam` | text | Jam kuliah |
+| `ruangan` | text | Ruangan |
+| `dosen` | text | Nama dosen |
 
 ---
 
 ## Sistem Keamanan
 
 ### Password Hashing
-Password di-hash menggunakan **SHA-256** via Web Crypto API (`crypto.subtle`) sebelum disimpan ke database. Password plain tidak pernah dikirim atau disimpan.
+Password di-hash menggunakan **SHA-256** via Web Crypto API (`crypto.subtle`) sebelum disimpan dan sebelum dicocokkan saat login. Password plain tidak pernah menyentuh database.
 
 ```
-Input password → sha256() → hash disimpan di DB
+Input password → sha256(password) → hash disimpan di DB
+Login: sha256(input) === hash di DB → berhasil
 ```
 
 ### Session Token (SSID)
-Sistem sesi menggunakan dua lapisan:
+Sistem sesi menggunakan dua lapisan keamanan:
 
 ```
 Login berhasil
   ↓
-generateSsid() → 6 random bytes (crypto.getRandomValues)
-              → 12 karakter hex  ← disimpan di localStorage (plain)
-  ↓
-sha256(plain)  → hash             ← disimpan di kolom users.ssid (DB)
+generateSsid() → crypto.getRandomValues(6 bytes) → 12 karakter hex
+                                                  ↑ disimpan di localStorage (plain)
+sha256(plain)  → 64 karakter hex hash             ← disimpan di kolom users.ssid (DB)
 ```
 
-Saat validasi sesi:
+Saat validasi sesi (setiap buka halaman):
 ```
 localStorage → ambil ssidPlain
             → sha256(ssidPlain) = ssidHashed
             → query DB: .eq('ssid', ssidHashed)
-            → cek expired_at dari DB
+            → cek expired_at dari DB (bukan dari client)
+            → valid → lanjut | tidak valid/expired → login.html
 ```
 
 **Keuntungan:** Jika DB bocor, attacker hanya mendapat hash — tidak bisa dipakai langsung karena sistem selalu hash ulang sebelum query.
@@ -163,7 +183,17 @@ localStorage → ambil ssidPlain
 ### Logout
 Logout membersihkan sesi di dua tempat sekaligus:
 1. `localStorage.removeItem('ssid')`
-2. `DB: UPDATE users SET ssid = null, expired_at = null`
+2. `UPDATE users SET ssid = null, expired_at = null WHERE ssid = hash`
+
+### Timezone
+Semua timestamp dari Supabase disimpan dalam **UTC**. Tampilan dikonversi ke **WIB (UTC+7)** secara manual via `timeHelper.js` — tidak menggunakan `toLocaleString` agar konsisten di semua browser dan OS.
+
+```
+Supabase: "2026-05-09 08:13:35" (UTC, tanpa Z)
+  → paksa UTC: replace ' ' → 'T', tambah 'Z'
+  → shift +7 jam
+  → tampil: "9 Mei 2026, 15:13 WIB"
+```
 
 ---
 
@@ -171,13 +201,16 @@ Logout membersihkan sesi di dua tempat sekaligus:
 
 ```
 index.html
-    ↓
-splash.html  (animasi 3 detik + cek kondisi)
+    ↓ (redirect langsung)
+splash.html  (animasi 3 detik + cek kondisi DB & sesi)
     ├── Belum ada admin di DB     → register.html
     ├── Tidak ada ssid            → login.html
-    ├── ssid tidak valid di DB    → login.html
-    ├── ssid expired              → login.html  (clear DB + localStorage)
+    ├── ssid tidak valid di DB    → login.html  (hapus localStorage)
+    ├── ssid expired              → login.html  (clear ssid di DB + localStorage)
     └── Semua valid               → dashboard.html
+                                        ↓
+                              session.js guard aktif
+                              di semua halaman app
 ```
 
 ---
@@ -198,35 +231,75 @@ const SUPABASE_ANON = 'eyJ...'
 ### 3. Jalankan
 Buka `index.html` di browser. Pertama kali akan diarahkan ke `register.html` untuk membuat akun admin.
 
-### 4. Supabase Realtime
-Aktifkan Realtime di Supabase Dashboard untuk tabel `users`, `posts`, dan `announcements` agar fitur aktivitas live di dashboard berfungsi:
+### 4. Aktifkan Supabase Realtime
+Agar fitur update live berfungsi, aktifkan Realtime untuk tabel berikut:
 > Supabase Dashboard → Table Editor → pilih tabel → Enable Realtime
+
+Tabel yang perlu diaktifkan: `users`, `posts`, `announcements`
 
 ---
 
 ## Changelog
 
+### v1.5.0 — Bugfix Timezone, Forum & Mahasiswa Update
+**Dirilis:** Mei 2026
+
+#### 🐛 Bugfix Timezone
+- **Root cause** — Supabase mengirim timestamp tanpa suffix `Z` (misal `"2026-05-09 08:13:35"`). Browser menginterpretasikan string tanpa `Z` sebagai local time, bukan UTC, sehingga konversi WIB tidak terjadi dan waktu tampil 7 jam lebih awal
+- **Fix `timeHelper.js`** — Sebelum parse, string dipaksa jadi UTC dengan mengganti spasi → `T` dan menambah `Z`. Kemudian shift manual `+7 jam` menggunakan `getUTC*()`. Tidak ada `toLocaleString` sama sekali — konsisten di semua browser/OS
+- **Fix `session.js`, `checkAdmin.js`, `splash.html`** — Perbandingan `expired_at` juga diperbaiki dengan normalisasi UTC yang sama
+
+#### 🔄 Forum — Update Lengkap
+- **Session guard** ditambahkan — sebelumnya halaman bisa diakses tanpa login
+- **Nama mahasiswa** — sebelumnya semua post tampil "Postingan Mahasiswa". Kini query `nama` + `NIM` dari tabel `users` berdasarkan `user_id`, dengan **cache** agar tidak query berulang untuk user yang sama
+- **Order by `created_at`** — sebelumnya menggunakan `.order('id')`, kini diubah ke `.order('created_at', desc)` yang lebih akurat
+- **Realtime subscription** — `channel('forum-changes')` aktif untuk INSERT dan DELETE. Post baru dari APK langsung muncul beserta nama mahasiswanya. Counter "X postingan" update otomatis
+- **Timestamp WIB** — setiap card menampilkan waktu post dalam format "9 Mei 2026, 15:13 WIB"
+
+#### 👥 Mahasiswa — Update
+- **`session.js` dengan `defer`** — sebelumnya tanpa `defer`, berpotensi memblock render halaman sebelum Supabase siap
+
+---
+
+### v1.4.0 — Bugfix Query & Skema Database
+**Dirilis:** Mei 2026
+
+#### 🐛 Bugfix Query
+- **`announcements`** — kolom timestamp adalah `tanggal` (bukan `created_at`). Seluruh query `select`, `order`, dan `insert` dikoreksi. Insert kini menyertakan `tanggal: new Date().toISOString()`
+- **`posts`** — kolom konten adalah `isi_post` dan `user_id` tersedia untuk lookup nama mahasiswa
+- **`users`** — kolom `nim` ditambahkan ke query select; kolom `created_at` tidak ada di tabel ini sehingga dihapus dari semua query
+- **`schedules`** — kolom nyata: `matkul`, `hari`, `jam`, `ruangan`, `dosen` (bukan hanya `created_at`)
+
+#### 🔒 Validasi Duplikat Pengumuman
+- Sebelum insert, query cek apakah judul yang sama sudah ada di DB
+- Jika duplikat ditemukan → tampilkan error inline, batalkan insert
+- Validasi field kosong per-field dengan pesan spesifik
+- Loading state tombol "Menyimpan..." saat proses berlangsung
+
+#### 👥 Mahasiswa — Fitur Baru
+- **Search realtime** — filter by nama, NIM, atau email secara client-side tanpa query ulang
+- **Counter** — badge "X mahasiswa" update mengikuti hasil filter dan perubahan realtime
+- **Badge "● Baru"** — mahasiswa yang baru daftar dari APK ditandai selama 30 detik
+- **Realtime DELETE** — jika akun dihapus dari halaman lain, list update otomatis
+- **Tampilkan NIM** — kolom NIM kini ditampilkan di card mahasiswa
+
+---
+
 ### v1.3.0 — Keamanan Sesi & Enkripsi
-**Dirilis:** Mei 2025
+**Dirilis:** Mei 2026
 
 #### 🔐 Keamanan
-- **Password hashing** — Password kini di-hash SHA-256 via `crypto.subtle` sebelum disimpan dan sebelum dicocokkan saat login. Password plain tidak pernah menyentuh database
-- **SSID 12 karakter** — Session token digenerate dari `crypto.getRandomValues` (6 bytes → 12 hex char), menggantikan `Math.random()` yang tidak aman secara kriptografis
-- **SSID double-layer** — Plain token di localStorage, hash-nya di DB. Kebocoran DB tidak langsung memberi akses ke sesi aktif
-- **Logout bersih** — Logout menghapus ssid dari localStorage **dan** set null di kolom DB, mencegah sesi orphan
-- **Expired_at dari DB** — Validasi expired tidak lagi dihitung di client (mudah dimanipulasi), tapi dibaca dari kolom `expired_at` di Supabase
+- **Password hashing** — Password di-hash SHA-256 via `crypto.subtle` sebelum disimpan dan dicocokkan saat login
+- **SSID 12 karakter** — Session token digenerate dari `crypto.getRandomValues` (6 bytes → 12 hex char), menggantikan `Math.random()` yang tidak kriptografis
+- **SSID double-layer** — Plain token di localStorage, hash-nya di DB. Kebocoran DB tidak langsung memberi akses sesi
+- **Logout bersih** — Logout menghapus ssid dari localStorage dan set null di DB
+- **`expired_at` dari DB** — Validasi expired dibaca dari DB, bukan dihitung di client
 
-#### ✅ Validasi Login
-- Tidak bisa submit login dengan field kosong
+#### ✅ Validasi Login & Register
+- Field kosong dicek per-field dengan pesan spesifik
 - Validasi format email dengan regex
-- Pesan error spesifik per kondisi (kosong, format salah, password salah)
-- Animasi shake pada error
-- Tombol disable + loading state saat proses berlangsung
-- Enter key support
-
-#### ✅ Validasi Register
-- Nama minimal 3 karakter
-- Validasi format email
+- Animasi shake pada error, tombol disable saat loading
+- Enter key support di semua form
 - Password minimal 8 karakter, harus ada huruf dan angka
 - Cek duplikat email sebelum insert
 - Auto-login setelah register berhasil
@@ -234,38 +307,37 @@ Aktifkan Realtime di Supabase Dashboard untuk tabel `users`, `posts`, dan `annou
 ---
 
 ### v1.2.0 — Redesain UI & Light Theme
-**Dirilis:** Mei 2025
+**Dirilis:** Mei 2026
 
 #### 🎨 UI/UX
-- **Light theme** — Tema gelap total diganti dengan light theme bersih (`#f4f6fb` background, card putih). Sidebar tetap gelap (`#2d1b69`) sebagai kontras
-- **Font baru** — Migrasi ke **Plus Jakarta Sans** untuk keterbacaan lebih baik
-- **CSS Variables** — Seluruh warna, radius, dan spacing dikelola via custom properties untuk konsistensi
-- **Login split-layout** — Halaman login kini dua panel: kiri branding (desktop), kanan form
-- **Logo redesain** — Logo baru berbentuk shield/perisai ungu dengan mortarboard dan buku terbuka, format SVG (scalable, ringan)
-- **Warna brand ungu** — Brand color berubah dari hijau ke ungu (`#7c3aed`) sesuai desain logo baru
+- **Light theme** — Background `#f4f6fb`, card putih. Sidebar tetap gelap `#2d1b69`
+- **Font** — Plus Jakarta Sans
+- **CSS Variables** — Warna, radius, spacing terpusat
+- **Login split-layout** — Panel kiri branding, kanan form
+- **Logo SVG** — Shield ungu + mortarboard + buku terbuka
+- **Responsif** — Breakpoint 1024px, 768px, 480px; hamburger menu mobile
 
 #### 📊 Dashboard
-- **Stat cards berwarna** — Setiap kartu statistik punya warna aksen berbeda dengan trend label
-- **Aksi Cepat** — 3 shortcut card ke pengumuman, mahasiswa, dan forum
-- **Greeting personal** — Sapaan menggunakan nama admin dari sesi
+- Stat cards 5 item dengan warna aksen per kategori
+- Aksi Cepat — 3 shortcut card
+- Greeting personal dari nama admin di sesi
+- Aktivitas terakhir real-time dari 3 tabel
 
 ---
 
-### v1.1.0 — Aktivitas Realtime & Splash Screen
-**Dirilis:** Mei 2025
+### v1.1.0 — Realtime & Splash Screen
+**Dirilis:** Mei 2026
 
 #### ⚡ Realtime
-- **6 channel Supabase Realtime** — INSERT & DELETE untuk tabel `users`, `posts`, `announcements`
-- **Counter otomatis** — Stat card naik/turun otomatis saat ada perubahan data, dengan animasi flash
-- **Feed dari DB nyata** — Aktivitas terakhir diambil dari 3 tabel, digabung, diurutkan descending — bukan data dummy
-- **Label timeAgo** — "2 mnt lalu", "1 jam lalu" refresh otomatis setiap 30 detik
-- **Live badge** — Indikator animasi pulse di section aktivitas
+- 6 channel Supabase Realtime (INSERT & DELETE untuk `users`, `posts`, `announcements`)
+- Counter stat card naik/turun otomatis dengan animasi flash
+- Feed aktivitas dari data DB nyata, bukan dummy
+- Label timeAgo refresh setiap 30 detik
 
 #### 🌟 Splash Screen
-- **`splash.html`** — Animasi logo bounce-in, dual ring pulse, loading bar gradient
-- **Status text dinamis** — Teks status berubah sesuai tahap pengecekan (koneksi → admin → sesi)
-- **`index.html`** — Cukup sebagai redirect ke splash, bukan entry point langsung
-- **Flow navigasi lengkap** — Splash menentukan ke mana user diarahkan berdasarkan kondisi DB dan sesi
+- `splash.html` — animasi logo, loading bar, status text dinamis
+- `index.html` — redirect ke splash
+- Flow navigasi lengkap berdasarkan kondisi DB dan sesi
 
 ---
 
@@ -273,10 +345,10 @@ Aktifkan Realtime di Supabase Dashboard untuk tabel `users`, `posts`, dan `annou
 **Dirilis:** 2025
 
 #### 🚀 Fitur Awal
-- Login admin dengan Supabase
+- Login admin + session sederhana
 - CRUD pengumuman
-- Moderasi forum (lihat + hapus postingan)
-- Kelola data mahasiswa (lihat + hapus)
-- Dashboard statistik dasar (total per tabel)
-- Sidebar navigasi dengan halaman aktif
-- Logout dengan hapus localStorage
+- Moderasi forum
+- Kelola data mahasiswa
+- Dashboard statistik dasar
+- Sidebar navigasi
+- Logout
