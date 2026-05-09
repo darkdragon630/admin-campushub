@@ -122,16 +122,16 @@
     // Setelah bar selesai (~3 detik), jalankan checkAdmin
     // status text update dinamis
     const steps = [
-      { t: 800,  msg: 'Menghubungkan ke server...' },
-      { t: 1600, msg: 'Memeriksa akun admin...' },
-      { t: 2400, msg: 'Memverifikasi sesi...' },
+      { t: 5000,  msg: 'Menghubungkan ke server...' },
+      { t: 6000, msg: 'Memeriksa akun admin...' },
+      { t: 7000, msg: 'Memverifikasi sesi...' },
     ]
     steps.forEach(({ t, msg }) =>
       setTimeout(() => { document.getElementById('statusText').textContent = msg }, t)
     )
 
     // Jalankan checkAdmin setelah bar animation (2s delay + 1s fill = 3s total)
-    setTimeout(checkAdmin, 3100)
+    setTimeout(checkAdmin, 6000)
 
     async function sha256(str) {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
