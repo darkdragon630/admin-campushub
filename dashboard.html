@@ -290,9 +290,9 @@
     ] = await Promise.all([
       supabaseClient
         .from('users')
-        .select('id,nama,email,role,created_at')
+        .select('id,nama,nim,email,role')
         .eq('role','mahasiswa')
-        .order('created_at',{ascending:false})
+        .order('id',{ascending:false})
         .limit(8),
       supabaseClient
         .from('posts')
@@ -301,8 +301,8 @@
         .limit(8),
       supabaseClient
         .from('announcements')
-        .select('id,judul,created_at')
-        .order('created_at',{ascending:false})
+        .select('id,judul,tanggal')
+        .order('tanggal',{ascending:false})
         .limit(8),
     ])
 
@@ -312,7 +312,7 @@
       type: 'mahasiswa',
       initials: initials(u.nama || u.email),
       desc: u.nama || u.email,
-      created_at: u.created_at,
+      created_at: new Date().toISOString(),
     }))
 
     ;(posts || []).forEach(p => {
@@ -327,7 +327,7 @@
     ;(announcements || []).forEach(a => items.push({
       type: 'pengumuman',
       desc: a.judul || '',
-      created_at: a.created_at,
+      created_at: a.tanggal,
     }))
 
     activities = items.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,30)
@@ -377,7 +377,7 @@
     /* INSERT: pengumuman baru */
     supabaseClient.channel('rt-announcements-insert')
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'announcements' }, ({ new: a }) => {
-        pushActivity({ type:'pengumuman', desc:a.judul||'', created_at:a.created_at||new Date().toISOString() })
+        pushActivity({ type:'pengumuman', desc:a.judul||'', created_at:a.tanggal||new Date().toISOString() })
         bumpCount('totalPengumuman', 1)
       })
       .subscribe()

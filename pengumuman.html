@@ -61,14 +61,14 @@
       const judul = document.getElementById('judul').value.trim();
       const isi   = document.getElementById('isi').value.trim();
       if (!judul || !isi) return alert('Judul dan isi tidak boleh kosong.');
-      await supabaseClient.from('announcements').insert([{ judul, isi }]);
+      await supabaseClient.from('announcements').insert([{ judul, isi, tanggal: new Date().toISOString() }]);
       document.getElementById('judul').value = '';
       document.getElementById('isi').value = '';
       loadPengumuman();
     }
 
     async function loadPengumuman() {
-      const { data } = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
+      const { data } = await supabaseClient.from('announcements').select('*').order('tanggal', { ascending: false });
       const el = document.getElementById('pengumumanList');
       if (!data || !data.length) {
         el.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Belum ada pengumuman.</p></div>';
@@ -80,6 +80,7 @@
             <h3>${item.judul}</h3>
             <p>${item.isi}</p>
             <span class="tag tag-indigo">📢 Pengumuman</span>
+            ${item.tanggal ? `<span style="font-size:11px;color:var(--muted2);margin-top:4px;display:block">${new Date(item.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>` : ''}
           </div>
           <button class="btn-danger" onclick="hapusPengumuman(${item.id})">Hapus</button>
         </div>`).join('');
