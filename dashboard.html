@@ -66,6 +66,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
+  <script src="js/timeHelper.js"></script>
   <script src="js/session.js" defer></script>
 </head>
 <body class="app-page">
@@ -169,20 +170,8 @@
 
   <script>
   /* ──────────────────────────────────────
-     HELPERS
+     HELPERS — timeAgo & formatWIB dari js/timeHelper.js
   ────────────────────────────────────── */
-  function timeAgo(iso) {
-    if (!iso) return ''
-    const s = Math.floor((Date.now() - new Date(iso)) / 1000)
-    if (s < 5)   return 'Baru saja'
-    if (s < 60)  return `${s} dtk lalu`
-    const m = Math.floor(s / 60)
-    if (m < 60)  return `${m} mnt lalu`
-    const h = Math.floor(m / 60)
-    if (h < 24)  return `${h} jam lalu`
-    const d = Math.floor(h / 24)
-    return d === 1 ? 'Kemarin' : `${d} hari lalu`
-  }
 
   function initials(name) {
     if (!name) return '?'
