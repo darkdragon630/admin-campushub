@@ -9,14 +9,15 @@
   <script src="js/config.js"></script>
   <script src="js/supabase.js"></script>
   <script src="js/timeHelper.js"></script>
+  <script src="js/session.js"></script><!-- ← guard: redirect ke login jika sesi tidak valid -->
 </head>
 <body class="app-page">
+
   <!-- Hamburger (mobile only) -->
   <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
     <span></span><span></span><span></span>
   </button>
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
-
 
   <div class="sidebar">
     <div class="sidebar-brand">
@@ -43,6 +44,7 @@
 
     <div class="section-header">
       <h2>Semua Postingan</h2>
+      <span class="count-badge" id="countBadge" style="display:inline-flex;align-items:center;padding:4px 12px;background:#e0f2fe;color:#0c4a6e;border-radius:100px;font-size:12px;font-weight:700">0 postingan</span>
     </div>
 
     <div class="list-grid" id="forumList">
@@ -51,33 +53,113 @@
   </div>
 
   <script>
-    async function loadForum() {
-      const { data } = await supabaseClient.from('posts').select('*').order('id', { ascending: false });
-      const el = document.getElementById('forumList');
-      if (!data || !data.length) {
-        el.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Belum ada postingan di forum.</p></div>';
-        return;
-      }
-      el.innerHTML = data.map((item, i) => `
-        <div class="jadwal-card" style="animation-delay:${i*.05}s">
+    // Cache user names: { user_id → nama }
+    const userCache = {}
+    let allPosts = []
+
+    /* ── Ambil nama mahasiswa by user_id (cache) ── */
+    async function getNama(userId) {
+      if (!userId) return 'Anonim'
+      if (userCache[userId]) return userCache[userId]
+      const { data } = await supabaseClient
+        .from('users')
+        .select('nama, nim')
+        .eq('id', userId)
+        .single()
+      const label = data
+        ? `${data.nama || 'Mahasiswa'}${data.nim ? ` (${data.nim})` : ''}`
+        : 'Mahasiswa'
+      userCache[userId] = label
+      return label
+    }
+
+    /* ── Render satu card post ── */
+    function renderCard(item, i = 0) {
+      const nama = userCache[item.user_id] || 'Memuat...'
+      const inisial = nama.charAt(0).toUpperCase()
+      return `
+        <div class="jadwal-card" id="post-${item.id}" style="animation-delay:${i*.04}s">
+          <div style="width:42px;height:42px;border-radius:50%;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#0c4a6e;flex-shrink:0">
+            ${inisial}
+          </div>
           <div class="jadwal-card-body">
-            <h3>Postingan Mahasiswa</h3>
-            <p>${item.isi_post || ''}</p>
+            <h3 style="font-size:13.5px">${nama}</h3>
+            <p style="margin-top:4px">${item.isi_post || ''}</p>
             <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
               <span class="tag tag-cyan">💬 Forum</span>
-              ${item.created_at ? `<span style="font-size:11px;color:var(--muted2)">🕐 ${formatWIB(item.created_at)}</span>` : ''}
+              ${item.created_at
+                ? `<span style="font-size:11px;color:var(--muted2)">🕐 ${formatWIB(item.created_at)}</span>`
+                : ''}
             </div>
           </div>
           <button class="btn-danger" onclick="hapusPost(${item.id})">Hapus</button>
-        </div>`).join('');
+        </div>`
     }
 
+    /* ── Render semua ── */
+    function renderAll() {
+      const el = document.getElementById('forumList')
+      document.getElementById('countBadge').textContent = `${allPosts.length} postingan`
+      if (!allPosts.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><p>Belum ada postingan di forum.</p></div>'
+        return
+      }
+      el.innerHTML = allPosts.map((p, i) => renderCard(p, i)).join('')
+    }
+
+    /* ── Load awal dari DB ── */
+    async function loadForum() {
+      const { data, error } = await supabaseClient
+        .from('posts')
+        .select('id, user_id, isi_post, created_at')
+        .order('created_at', { ascending: false })
+
+      if (error) { console.error(error); return }
+      allPosts = data || []
+
+      // Prefetch semua user names sekaligus (unique user_id)
+      const uniqueIds = [...new Set(allPosts.map(p => p.user_id).filter(Boolean))]
+      await Promise.all(uniqueIds.map(id => getNama(id)))
+
+      renderAll()
+    }
+
+    /* ── Hapus post ── */
     async function hapusPost(id) {
-      if (!confirm('Hapus postingan ini?')) return;
-      await supabaseClient.from('posts').delete().eq('id', id);
-      loadForum();
+      if (!confirm('Hapus postingan ini?')) return
+      const { error } = await supabaseClient.from('posts').delete().eq('id', id)
+      if (error) { alert('Gagal menghapus. Coba lagi.'); return }
+      allPosts = allPosts.filter(p => p.id !== id)
+      renderAll()
     }
 
+    /* ── Realtime subscription ── */
+    function subscribeRealtime() {
+      supabaseClient
+        .channel('forum-changes')
+        // Post baru masuk
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'posts'
+        }, async ({ new: post }) => {
+          await getNama(post.user_id) // cache nama dulu
+          allPosts.unshift(post)
+          renderAll()
+        })
+        // Post dihapus (misal dari APK mahasiswa sendiri)
+        .on('postgres_changes', {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'posts'
+        }, ({ old: post }) => {
+          allPosts = allPosts.filter(p => p.id !== post.id)
+          renderAll()
+        })
+        .subscribe()
+    }
+
+    /* ── Logout ── */
     async function logout() {
       const ssidPlain = localStorage.getItem('ssid')
       if (ssidPlain) {
@@ -90,13 +172,17 @@
       localStorage.removeItem('ssid')
       location.href = 'login.html'
     }
-    loadForum();
+
+    /* ── Init ── */
+    loadForum()
+    subscribeRealtime()
   </script>
+
   <script>
     // ── Sidebar mobile toggle ──
-    const btn      = document.getElementById('hamburgerBtn')
-    const sidebar  = document.querySelector('.sidebar')
-    const overlay  = document.getElementById('sidebarOverlay')
+    const btn     = document.getElementById('hamburgerBtn')
+    const sidebar = document.querySelector('.sidebar')
+    const overlay = document.getElementById('sidebarOverlay')
 
     function openSidebar() {
       sidebar.classList.add('open')
@@ -104,7 +190,6 @@
       btn.classList.add('open')
       document.body.style.overflow = 'hidden'
     }
-
     function closeSidebar() {
       sidebar.classList.remove('open')
       overlay.classList.remove('open')
@@ -116,13 +201,10 @@
       sidebar.classList.contains('open') ? closeSidebar() : openSidebar()
     )
     overlay?.addEventListener('click', closeSidebar)
-
-    // Tutup sidebar saat nav item diklik di mobile
     document.querySelectorAll('.sidebar li').forEach(li =>
-      li.addEventListener('click', () => {
-        if (window.innerWidth <= 768) closeSidebar()
-      })
+      li.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar() })
     )
   </script>
+
 </body>
 </html>

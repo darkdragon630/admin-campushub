@@ -122,16 +122,16 @@
     // Setelah bar selesai (~3 detik), jalankan checkAdmin
     // status text update dinamis
     const steps = [
-      { t: 4000,  msg: 'Menghubungkan ke server...' },
-      { t: 5600, msg: 'Memeriksa akun admin...' },
-      { t: 6400, msg: 'Memverifikasi sesi...' },
+      { t: 800,  msg: 'Menghubungkan ke server...' },
+      { t: 1600, msg: 'Memeriksa akun admin...' },
+      { t: 2400, msg: 'Memverifikasi sesi...' },
     ]
     steps.forEach(({ t, msg }) =>
       setTimeout(() => { document.getElementById('statusText').textContent = msg }, t)
     )
 
     // Jalankan checkAdmin setelah bar animation (2s delay + 1s fill = 3s total)
-    setTimeout(checkAdmin, 6100)
+    setTimeout(checkAdmin, 3100)
 
     async function sha256(str) {
       const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
@@ -172,7 +172,11 @@
         }
 
         // 4. Cek expired
-        if (!user.expired_at || new Date() > new Date(user.expired_at)) {
+        if (!user.expired_at || (() => {
+          const utc = user.expired_at.includes('Z') || user.expired_at.includes('+')
+            ? user.expired_at : user.expired_at.replace(' ','T') + 'Z'
+          return Date.now() > new Date(utc).getTime()
+        })()) {
           await supabaseClient.from('users').update({ ssid: null, expired_at: null }).eq('ssid', ssidHashed)
           localStorage.removeItem('ssid')
           location.href = 'login.html'

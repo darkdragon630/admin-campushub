@@ -56,7 +56,11 @@ async function checkAdmin() {
 
     // 4. Cek expired_at dari DB
     // CATATAN: expired_at di DB adalah UTC, Date.now() juga UTC — aman dibanding langsung
-    if (!user.expired_at || new Date() > new Date(user.expired_at)) {
+    if (!user.expired_at || (() => {
+          const utc = user.expired_at.includes('Z') || user.expired_at.includes('+')
+            ? user.expired_at : user.expired_at.replace(' ','T') + 'Z'
+          return Date.now() > new Date(utc).getTime()
+        })()) {
       await supabaseClient
         .from('users')
         .update({ ssid: null, expired_at: null })

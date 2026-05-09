@@ -59,13 +59,72 @@
 
   <script>
     async function tambahPengumuman() {
-      const judul = document.getElementById('judul').value.trim();
-      const isi   = document.getElementById('isi').value.trim();
-      if (!judul || !isi) return alert('Judul dan isi tidak boleh kosong.');
-      await supabaseClient.from('announcements').insert([{ judul, isi, tanggal: new Date().toISOString() }]);
-      document.getElementById('judul').value = '';
-      document.getElementById('isi').value = '';
-      loadPengumuman();
+      const judul = document.getElementById('judul').value.trim()
+      const isi   = document.getElementById('isi').value.trim()
+
+      // Validasi kosong
+      if (!judul) { showFormError('Judul tidak boleh kosong.'); return }
+      if (!isi)   { showFormError('Isi pengumuman tidak boleh kosong.'); return }
+      clearFormError()
+
+      // Cek duplikat: judul yang sama persis sudah ada?
+      const { data: existing } = await supabaseClient
+        .from('announcements')
+        .select('id')
+        .eq('judul', judul)
+        .limit(1)
+
+      if (existing && existing.length > 0) {
+        showFormError('Pengumuman dengan judul ini sudah ada.')
+        return
+      }
+
+      setBtnLoading(true)
+
+      const { error } = await supabaseClient
+        .from('announcements')
+        .insert([{ judul, isi, tanggal: new Date().toISOString() }])
+
+      setBtnLoading(false)
+
+      if (error) { showFormError('Gagal menyimpan. Coba lagi.'); return }
+
+      document.getElementById('judul').value = ''
+      document.getElementById('isi').value   = ''
+      loadPengumuman()
+    }
+
+    function showFormError(msg) {
+      let el = document.getElementById('formError')
+      if (!el) {
+        el = document.createElement('div')
+        el.id = 'formError'
+        el.style.cssText = [
+          'color:#991b1b',
+          'font-size:13px',
+          'font-weight:500',
+          'margin-top:10px',
+          'padding:10px 14px',
+          'background:#fff1f2',
+          'border:1px solid #fecdd3',
+          'border-radius:10px'
+        ].join(';')
+        document.querySelector('.btn-add')?.after(el)
+      }
+      el.style.display = 'block'
+      el.textContent = '⚠ ' + msg
+    }
+
+    function clearFormError() {
+      const el = document.getElementById('formError')
+      if (el) el.style.display = 'none'
+    }
+
+    function setBtnLoading(on) {
+      const btn = document.querySelector('.btn-add')
+      if (!btn) return
+      btn.disabled    = on
+      btn.textContent = on ? 'Menyimpan...' : '+ Publikasikan'
     }
 
     async function loadPengumuman() {

@@ -38,7 +38,11 @@ async function checkSession() {
       return
     }
 
-    if (!data.expired_at || new Date() > new Date(data.expired_at)) {
+    if (!data.expired_at || (() => {
+          const utc = data.expired_at.includes('Z') || data.expired_at.includes('+')
+            ? data.expired_at : data.expired_at.replace(' ','T') + 'Z'
+          return Date.now() > new Date(utc).getTime()
+        })()) {
       // Bersihkan ssid di DB juga
       await supabaseClient
         .from('users')
