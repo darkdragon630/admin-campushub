@@ -1,439 +1,458 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Dashboard — CampusHub</title>
-  <link rel="stylesheet" href="css/style.css">
-  <style>
-    .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .feed-header h2 { font-size:16px; font-weight:700; color:var(--text); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard — CampusHub</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* --- Styles untuk Status Online --- */
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8; /* Default Gray (Offline) */
+            transition: all 0.3s ease;
+        }
 
-    .live-badge {
-      display:flex; align-items:center; gap:6px;
-      padding:5px 12px;
-      background:#f5f3ff; border:1px solid #ddd6fe;
-      border-radius:100px;
-      font-size:11.5px; font-weight:600; color:#5b21b6;
-    }
-    .live-dot {
-      width:7px; height:7px; border-radius:50%;
-      background:#7c3aed;
-      animation: livePulse 1.5s ease-in-out infinite;
-    }
-    @keyframes livePulse {
-      0%,100%{ box-shadow:0 0 0 0 rgba(124,58,237,.5); opacity:1; }
-      50%{ box-shadow:0 0 0 6px rgba(124,58,237,0); opacity:.7; }
-    }
+        .dot.online {
+            background: #10b981; /* Green */
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: onlinePulse 2s infinite;
+        }
 
-    .activity-feed {
-      background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--radius-lg); overflow:hidden;
-    }
+        @keyframes onlinePulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
 
-    .activity-item {
-      display:flex; align-items:flex-start; gap:12px;
-      padding:14px 20px; border-bottom:1px solid var(--border);
-      transition:background .15s;
-      animation: slideIn .35s ease both;
-    }
-    @keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
-    .activity-item:last-child { border-bottom:none; }
-    .activity-item:hover { background:var(--surface2); }
+        .status-text {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+        }
 
-    .activity-avatar {
-      width:38px; height:38px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      font-size:13px; font-weight:700; flex-shrink:0;
-    }
-    .activity-body { flex:1; min-width:0; }
-    .activity-body strong { font-size:13.5px; font-weight:600; color:var(--text); display:block; }
-    .activity-body span   { font-size:12px; color:var(--muted); margin-top:2px; display:block;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .activity-time { font-size:11.5px; color:var(--muted2); flex-shrink:0; white-space:nowrap; padding-top:2px; }
+        /* --- Feed Header & Activity Styles --- */
+        .feed-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .feed-header h2 { font-size:16px; font-weight:700; color:var(--text); }
 
-    .feed-empty { padding:40px 20px; text-align:center; color:var(--muted); font-size:13.5px; }
-    .feed-empty .ei { font-size:36px; margin-bottom:10px; opacity:.5; }
+        .live-badge {
+            display:flex; align-items:center; gap:6px;
+            padding:5px 12px;
+            background:#f5f3ff; border:1px solid #ddd6fe;
+            border-radius:100px;
+            font-size:11.5px; font-weight:600; color:#5b21b6;
+        }
+        .live-dot {
+            width:7px; height:7px; border-radius:50%;
+            background:#7c3aed;
+            animation: livePulse 1.5s ease-in-out infinite;
+        }
+        @keyframes livePulse {
+            0%,100%{ box-shadow:0 0 0 0 rgba(124,58,237,.5); opacity:1; }
+            50%{ box-shadow:0 0 0 6px rgba(124,58,237,0); opacity:.7; }
+        }
 
-    /* Counter flash animation */
-    @keyframes countFlash {
-      0%{ color:var(--text); }
-      30%{ color:#7c3aed; transform:scale(1.15); }
-      100%{ color:var(--text); transform:scale(1); }
-    }
-    .count-flash { animation: countFlash .6s ease both; }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/timeHelper.js"></script>
-  <script src="js/session.js" defer></script>
+        .activity-feed {
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:var(--radius-lg); overflow:hidden;
+        }
+
+        .activity-item {
+            display:flex; align-items:flex-start; gap:12px;
+            padding:14px 20px; border-bottom:1px solid var(--border);
+            transition:background .15s;
+            animation: slideIn .35s ease both;
+        }
+        @keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+        .activity-item:last-child { border-bottom:none; }
+        .activity-item:hover { background:var(--surface2); }
+
+        .activity-avatar {
+            width:38px; height:38px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; font-weight:700; flex-shrink:0;
+        }
+        .activity-body { flex:1; min-width:0; }
+        .activity-body strong { font-size:13.5px; font-weight:600; color:var(--text); display:block; }
+        .activity-body span   { font-size:12px; color:var(--muted); margin-top:2px; display:block;
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .activity-time { font-size:11.5px; color:var(--muted2); flex-shrink:0; white-space:nowrap; padding-top:2px; }
+
+        .feed-empty { padding:40px 20px; text-align:center; color:var(--muted); font-size:13.5px; }
+        .feed-empty .ei { font-size:36px; margin-bottom:10px; opacity:.5; }
+
+        @keyframes countFlash {
+            0%{ color:var(--text); }
+            30%{ color:#7c3aed; transform:scale(1.15); }
+            100%{ color:var(--text); transform:scale(1); }
+        }
+        .count-flash { animation: countFlash .6s ease both; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/timeHelper.js"></script>
+    <script src="js/session.js" defer></script>
 </head>
 <body class="app-page">
-  <!-- Hamburger (mobile only) -->
-  <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
-    <span></span><span></span><span></span>
-  </button>
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Buka menu">
+        <span></span><span></span><span></span>
+    </button>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-
-  <div class="sidebar">
-    <div class="sidebar-brand">
-      <img src="assets/logo.svg" alt="logo">
-      <h2>CampusHub</h2>
-    </div>
-    <div class="nav-section">Menu Utama</div>
-    <ul>
-      <li class="active"><span class="nav-icon">📊</span> Dashboard</li>
-      <li onclick="location.href='pengumuman.html'"><span class="nav-icon">📢</span> Pengumuman</li>
-      <li onclick="location.href='forum.html'"><span class="nav-icon">💬</span> Forum</li>
-      <li onclick="location.href='mahasiswa.html'"><span class="nav-icon">👥</span> Mahasiswa</li>
-      <li class="logout" onclick="logout()"><span class="nav-icon">🚪</span> Logout</li>
-    </ul>
-  </div>
-
-  <div class="main">
-
-    <div class="topbar">
-      <div class="topbar-left">
-        <h1>Dashboard Admin</h1>
-        <p class="page-subtitle" id="greetText">Selamat datang! Memuat data...</p>
-      </div>
-      <div class="topbar-right">
-        <div class="status-badge"><span class="dot"></span> Session aktif</div>
-      </div>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="assets/logo.svg" alt="logo">
+            <h2>CampusHub</h2>
+        </div>
+        <div class="nav-section">Menu Utama</div>
+        <ul>
+            <li class="active"><span class="nav-icon">📊</span> Dashboard</li>
+            <li onclick="location.href='pengumuman.html'"><span class="nav-icon">📢</span> Pengumuman</li>
+            <li onclick="location.href='forum.html'"><span class="nav-icon">💬</span> Forum</li>
+            <li onclick="location.href='mahasiswa.html'"><span class="nav-icon">👥</span> Mahasiswa</li>
+            <li class="logout" onclick="handleLogout()"><span class="nav-icon">🚪</span> Logout</li>
+        </ul>
     </div>
 
-    <div class="cards">
-      <div class="card" style="animation-delay:.04s">
-        <div class="card-accent" style="background:#7c3aed"></div>
-        <div class="card-icon" style="background:#ede9fe">👤</div>
-        <h3>Total Admin</h3>
-        <p id="totalAdmin">—</p>
-        <div class="card-trend" style="color:#7c3aed">↑ Aktif</div>
-      </div>
-      <div class="card" style="animation-delay:.08s">
-        <div class="card-accent" style="background:#0891b2"></div>
-        <div class="card-icon" style="background:#e0f2fe">🎓</div>
-        <h3>Mahasiswa</h3>
-        <p id="totalMahasiswa">—</p>
-        <div class="card-trend" style="color:#0891b2">↑ Terdaftar</div>
-      </div>
-      <div class="card" style="animation-delay:.12s">
-        <div class="card-accent" style="background:#d97706"></div>
-        <div class="card-icon" style="background:#fef3c7">📅</div>
-        <h3>Total Jadwal</h3>
-        <p id="totalJadwal">—</p>
-        <div class="card-trend" style="color:#d97706">Minggu ini</div>
-      </div>
-      <div class="card" style="animation-delay:.16s">
-        <div class="card-accent" style="background:#059669"></div>
-        <div class="card-icon" style="background:#d1fae5">📢</div>
-        <h3>Pengumuman</h3>
-        <p id="totalPengumuman">—</p>
-        <div class="card-trend" style="color:#059669">↑ Aktif</div>
-      </div>
-      <div class="card" style="animation-delay:.2s">
-        <div class="card-accent" style="background:#7c3aed"></div>
-        <div class="card-icon" style="background:#f3e8ff">💬</div>
-        <h3>Postingan Forum</h3>
-        <p id="totalPost">—</p>
-        <div class="card-trend" style="color:#7c3aed">Perlu moderasi</div>
-      </div>
+    <div class="main">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1>Dashboard Admin</h1>
+                <p class="page-subtitle" id="greetText">Selamat datang! Memuat data...</p>
+            </div>
+            <div class="topbar-right">
+                <div class="status-badge">
+                    <span class="dot" id="statusDot"></span> 
+                    <span class="status-text" id="statusText">Session aktif</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cards">
+            <!-- Card items remain same -->
+            <div class="card" style="animation-delay:.04s">
+                <div class="card-accent" style="background:#7c3aed"></div>
+                <div class="card-icon" style="background:#ede9fe">👤</div>
+                <h3>Total Admin</h3>
+                <p id="totalAdmin">—</p>
+                <div class="card-trend" style="color:#7c3aed">↑ Aktif</div>
+            </div>
+            <div class="card" style="animation-delay:.08s">
+                <div class="card-accent" style="background:#0891b2"></div>
+                <div class="card-icon" style="background:#e0f2fe">🎓</div>
+                <h3>Mahasiswa</h3>
+                <p id="totalMahasiswa">—</p>
+                <div class="card-trend" style="color:#0891b2">↑ Terdaftar</div>
+            </div>
+            <div class="card" style="animation-delay:.12s">
+                <div class="card-accent" style="background:#d97706"></div>
+                <div class="card-icon" style="background:#fef3c7">📅</div>
+                <h3>Total Jadwal</h3>
+                <p id="totalJadwal">—</p>
+                <div class="card-trend" style="color:#d97706">Minggu ini</div>
+            </div>
+            <div class="card" style="animation-delay:.16s">
+                <div class="card-accent" style="background:#059669"></div>
+                <div class="card-icon" style="background:#d1fae5">📢</div>
+                <h3>Pengumuman</h3>
+                <p id="totalPengumuman">—</p>
+                <div class="card-trend" style="color:#059669">↑ Aktif</div>
+            </div>
+            <div class="card" style="animation-delay:.2s">
+                <div class="card-accent" style="background:#7c3aed"></div>
+                <div class="card-icon" style="background:#f3e8ff">💬</div>
+                <h3>Postingan Forum</h3>
+                <p id="totalPost">—</p>
+                <div class="card-trend" style="color:#7c3aed">Perlu moderasi</div>
+            </div>
+        </div>
+
+        <div class="section-header"><h2>Aksi Cepat</h2></div>
+        <div class="quick-actions" style="margin-bottom:28px">
+            <div class="action-card" onclick="location.href='pengumuman.html'">
+                <div class="action-icon" style="background:#ede9fe">📢</div>
+                <div><div class="action-label">Buat Pengumuman</div><div class="action-sub">Kirim info ke mahasiswa</div></div>
+            </div>
+            <div class="action-card" onclick="location.href='mahasiswa.html'">
+                <div class="action-icon" style="background:#e0f2fe">👥</div>
+                <div><div class="action-label">Kelola Mahasiswa</div><div class="action-sub">Lihat & hapus akun</div></div>
+            </div>
+            <div class="action-card" onclick="location.href='forum.html'">
+                <div class="action-icon" style="background:#f3e8ff">💬</div>
+                <div><div class="action-label">Moderasi Forum</div><div class="action-sub">Tinjau postingan baru</div></div>
+            </div>
+        </div>
+
+        <div class="feed-header">
+            <h2>Aktivitas Terakhir</h2>
+            <div class="live-badge"><span class="live-dot"></span> Live</div>
+        </div>
+        <div class="activity-feed" id="activityFeed">
+            <div class="feed-empty"><div class="ei">⏳</div><p>Memuat aktivitas...</p></div>
+        </div>
     </div>
 
-    <div class="section-header"><h2>Aksi Cepat</h2></div>
-    <div class="quick-actions" style="margin-bottom:28px">
-      <div class="action-card" onclick="location.href='pengumuman.html'">
-        <div class="action-icon" style="background:#ede9fe">📢</div>
-        <div><div class="action-label">Buat Pengumuman</div><div class="action-sub">Kirim info ke mahasiswa</div></div>
-      </div>
-      <div class="action-card" onclick="location.href='mahasiswa.html'">
-        <div class="action-icon" style="background:#e0f2fe">👥</div>
-        <div><div class="action-label">Kelola Mahasiswa</div><div class="action-sub">Lihat & hapus akun</div></div>
-      </div>
-      <div class="action-card" onclick="location.href='forum.html'">
-        <div class="action-icon" style="background:#f3e8ff">💬</div>
-        <div><div class="action-label">Moderasi Forum</div><div class="action-sub">Tinjau postingan baru</div></div>
-      </div>
-    </div>
+    <script>
+    /* ──────────────────────────────────────
+       CORE LOGIC
+    ────────────────────────────────────── */
 
-    <div class="feed-header">
-      <h2>Aktivitas Terakhir</h2>
-      <div class="live-badge"><span class="live-dot"></span> Live</div>
-    </div>
-    <div class="activity-feed" id="activityFeed">
-      <div class="feed-empty"><div class="ei">⏳</div><p>Memuat aktivitas...</p></div>
-    </div>
-
-  </div>
-
-  <script>
-  /* ──────────────────────────────────────
-     HELPERS — timeAgo & formatWIB dari js/timeHelper.js
-  ────────────────────────────────────── */
-
-  function initials(name) {
-    if (!name) return '?'
-    return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('')
-  }
-
-  function setCount(id, val) {
-    const el = document.getElementById(id)
-    if (!el) return
-    const prev = el.textContent
-    el.textContent = val ?? 0
-    if (prev !== '—' && prev !== String(val ?? 0)) {
-      el.classList.remove('count-flash')
-      void el.offsetWidth
-      el.classList.add('count-flash')
+    function initials(name) {
+        if (!name) return '?'
+        return name.trim().split(/\s+/).slice(0,2).map(w => w[0].toUpperCase()).join('')
     }
-  }
 
-  function bumpCount(id, delta = 1) {
-    const el = document.getElementById(id)
-    if (!el) return
-    const cur = parseInt(el.textContent) || 0
-    el.textContent = Math.max(0, cur + delta)
-    el.classList.remove('count-flash')
-    void el.offsetWidth
-    el.classList.add('count-flash')
-  }
-
-  /* ──────────────────────────────────────
-     ACTIVITY FEED STATE
-  ────────────────────────────────────── */
-  const TYPES = {
-    mahasiswa:  { bg:'#ede9fe', color:'#5b21b6', label:'Mahasiswa baru mendaftar', icon:'🎓' },
-    post:       { bg:'#f3e8ff', color:'#6d28d9', label:'Postingan forum baru',     icon:'💬' },
-    pengumuman: { bg:'#d1fae5', color:'#065f46', label:'Pengumuman dipublikasikan',icon:'📢' },
-    jadwal:     { bg:'#e0f2fe', color:'#0c4a6e', label:'Jadwal ditambahkan',       icon:'📅' },
-    hapus_post: { bg:'#fff1f2', color:'#991b1b', label:'Postingan dihapus',        icon:'🗑' },
-    hapus_user: { bg:'#fff1f2', color:'#991b1b', label:'Akun mahasiswa dihapus',   icon:'🗑' },
-  }
-
-  let activities = []
-
-  function pushActivity(item) {
-    activities.unshift({ ...item, _id: Math.random() })
-    activities = activities.slice(0, 30)
-    renderFeed()
-  }
-
-  function renderFeed() {
-    const el = document.getElementById('activityFeed')
-    if (!activities.length) {
-      el.innerHTML = '<div class="feed-empty"><div class="ei">📭</div><p>Belum ada aktivitas.</p></div>'
-      return
+    function setCount(id, val) {
+        const el = document.getElementById(id)
+        if (!el) return
+        const prev = el.textContent
+        el.textContent = val ?? 0
+        if (prev !== '—' && prev !== String(val ?? 0)) {
+            el.classList.remove('count-flash')
+            void el.offsetWidth
+            el.classList.add('count-flash')
+        }
     }
-    el.innerHTML = activities.slice(0, 15).map((a, i) => {
-      const t = TYPES[a.type] || { bg:'#f3f4f6', color:'#374151', label:'Aktivitas', icon:'🔔' }
-      const av = a.initials
-        ? `<div class="activity-avatar" style="background:${t.bg};color:${t.color}">${a.initials}</div>`
-        : `<div class="activity-avatar" style="background:${t.bg};color:${t.color};font-size:18px">${t.icon}</div>`
-      return `
-        <div class="activity-item" style="animation-delay:${i*.04}s">
-          ${av}
-          <div class="activity-body">
-            <strong>${a.label || t.label}</strong>
-            <span>${a.desc || ''}</span>
-          </div>
-          <span class="activity-time">${timeAgo(a.created_at)}</span>
-        </div>`
-    }).join('')
-  }
 
-  /* ──────────────────────────────────────
-     LOAD INITIAL DATA
-  ────────────────────────────────────── */
-  async function loadDashboard() {
-    const [admin, mahasiswa, jadwal, pengumuman, posts] = await Promise.all([
-      supabaseClient.from('users').select('*',{count:'exact'}).eq('role','admin'),
-      supabaseClient.from('users').select('*',{count:'exact'}).eq('role','mahasiswa'),
-      supabaseClient.from('schedules').select('*',{count:'exact'}),
-      supabaseClient.from('announcements').select('*',{count:'exact'}),
-      supabaseClient.from('posts').select('*',{count:'exact'}),
-    ])
-    setCount('totalAdmin', admin.count)
-    setCount('totalMahasiswa', mahasiswa.count)
-    setCount('totalJadwal', jadwal.count)
-    setCount('totalPengumuman', pengumuman.count)
-    setCount('totalPost', posts.count)
+    function bumpCount(id, delta = 1) {
+        const el = document.getElementById(id)
+        if (!el) return
+        const cur = parseInt(el.textContent) || 0
+        el.textContent = Math.max(0, cur + delta)
+        el.classList.remove('count-flash')
+        void el.offsetWidth
+        el.classList.add('count-flash')
+    }
 
-    // Greeting pakai nama dari sesi
+    /* ──────────────────────────────────────
+       STATUS ONLINE LOGIC
+    ────────────────────────────────────── */
+   async function updateOnlineStatus() {
+    const sessionRaw = localStorage.getItem('ssid');
+    if (!sessionRaw) return;
+
     try {
-      const s = JSON.parse(localStorage.getItem('ssid'))
-      if (s?.nama) {
-        document.getElementById('greetText').textContent =
-          `Halo, ${s.nama.split(' ')[0]}! Ini ringkasan aktivitas kampus hari ini.`
-      }
-    } catch {}
-  }
-
-  async function loadRecentActivity() {
-    /* Ambil data dari 3 tabel, gabung, sort descending */
-    const [
-      { data: users },
-      { data: posts },
-      { data: announcements }
-    ] = await Promise.all([
-      supabaseClient
-        .from('users')
-        .select('id,nama,nim,email,role')
-        .eq('role','mahasiswa')
-        .order('id',{ascending:false})
-        .limit(8),
-      supabaseClient
-        .from('posts')
-        .select('id,isi_post,created_at')
-        .order('created_at',{ascending:false})
-        .limit(8),
-      supabaseClient
-        .from('announcements')
-        .select('id,judul,tanggal')
-        .order('tanggal',{ascending:false})
-        .limit(8),
-    ])
-
-    const items = []
-
-    ;(users || []).forEach(u => items.push({
-      type: 'mahasiswa',
-      initials: initials(u.nama || u.email),
-      desc: u.nama || u.email,
-      created_at: new Date().toISOString(),
-    }))
-
-    ;(posts || []).forEach(p => {
-      const txt = (p.isi_post || '').trim()
-      items.push({
-        type: 'post',
-        desc: txt.length > 72 ? txt.slice(0,72) + '…' : txt,
-        created_at: p.created_at,
-      })
-    })
-
-    ;(announcements || []).forEach(a => items.push({
-      type: 'pengumuman',
-      desc: a.judul || '',
-      created_at: a.tanggal,
-    }))
-
-    activities = items.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(0,30)
-    renderFeed()
-  }
-
-  /* ──────────────────────────────────────
-     REALTIME SUBSCRIPTIONS
-  ────────────────────────────────────── */
-  function subscribeRealtime() {
-
-    /* INSERT: mahasiswa baru */
-    supabaseClient.channel('rt-users-insert')
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'users' }, ({ new: u }) => {
-        if (u.role !== 'mahasiswa') return
-        pushActivity({ type:'mahasiswa', initials:initials(u.nama||u.email), desc:u.nama||u.email, created_at:u.created_at||new Date().toISOString() })
-        bumpCount('totalMahasiswa', 1)
-      })
-      .subscribe()
-
-    /* DELETE: mahasiswa dihapus */
-    supabaseClient.channel('rt-users-delete')
-      .on('postgres_changes', { event:'DELETE', schema:'public', table:'users' }, ({ old: u }) => {
-        if (u.role !== 'mahasiswa') return
-        pushActivity({ type:'hapus_user', desc:'Akun telah dihapus oleh admin', created_at:new Date().toISOString() })
-        bumpCount('totalMahasiswa', -1)
-      })
-      .subscribe()
-
-    /* INSERT: postingan forum baru */
-    supabaseClient.channel('rt-posts-insert')
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'posts' }, ({ new: p }) => {
-        const txt = (p.isi_post||'').trim()
-        pushActivity({ type:'post', desc:txt.length>72?txt.slice(0,72)+'…':txt, created_at:p.created_at||new Date().toISOString() })
-        bumpCount('totalPost', 1)
-      })
-      .subscribe()
-
-    /* DELETE: postingan dihapus */
-    supabaseClient.channel('rt-posts-delete')
-      .on('postgres_changes', { event:'DELETE', schema:'public', table:'posts' }, () => {
-        pushActivity({ type:'hapus_post', desc:'Dihapus oleh admin', created_at:new Date().toISOString() })
-        bumpCount('totalPost', -1)
-      })
-      .subscribe()
-
-    /* INSERT: pengumuman baru */
-    supabaseClient.channel('rt-announcements-insert')
-      .on('postgres_changes', { event:'INSERT', schema:'public', table:'announcements' }, ({ new: a }) => {
-        pushActivity({ type:'pengumuman', desc:a.judul||'', created_at:a.tanggal||new Date().toISOString() })
-        bumpCount('totalPengumuman', 1)
-      })
-      .subscribe()
-
-    /* DELETE: pengumuman dihapus */
-    supabaseClient.channel('rt-announcements-delete')
-      .on('postgres_changes', { event:'DELETE', schema:'public', table:'announcements' }, () => {
-        bumpCount('totalPengumuman', -1)
-      })
-      .subscribe()
-  }
-
-  /* ──────────────────────────────────────
-     INIT
-  ────────────────────────────────────── */
-  async function logout() {
-    const ssidPlain = localStorage.getItem('ssid')
-    if (ssidPlain) {
-      try {
-        const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(ssidPlain))
-        const ssidHashed = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('')
-        await supabaseClient.from('users').update({ ssid: null, expired_at: null }).eq('ssid', ssidHashed)
-      } catch(e) { console.error('logout:', e) }
+        const sessionData = JSON.parse(sessionRaw);
+        await supabaseClient
+            .from('users')
+            .update({ 
+                last_seen: new Date().toISOString(),
+                status: 'online' // Pastikan ini selalu dikirim saat aktif
+            })
+            .eq('id', sessionData.id);
+            
+        // Update UI Dashboard
+        document.getElementById('statusDot')?.classList.add('online');
+        const txt = document.getElementById('statusText');
+        if (txt) {
+            txt.textContent = 'Online';
+            txt.style.color = '#10b981';
+        }
+    } catch (err) {
+        console.error("Pulse error:", err);
     }
-    localStorage.removeItem('ssid')
-    location.href = 'login.html'
-  }
+}
 
-  loadDashboard()
-  loadRecentActivity()
-  subscribeRealtime()
+// Jalankan setiap 30 detik
+setInterval(updateOnlineStatus, 30000);
 
-  // Refresh label timeAgo setiap 30 detik
-  setInterval(() => { if (activities.length) renderFeed() }, 30_000)
-  </script>
 
-  <script>
-    // ── Sidebar mobile toggle ──
-    const btn      = document.getElementById('hamburgerBtn')
-    const sidebar  = document.querySelector('.sidebar')
-    const overlay  = document.getElementById('sidebarOverlay')
-
-    function openSidebar() {
-      sidebar.classList.add('open')
-      overlay.classList.add('open')
-      btn.classList.add('open')
-      document.body.style.overflow = 'hidden'
+    /* ──────────────────────────────────────
+       ACTIVITY FEED STATE
+    ────────────────────────────────────── */
+    const TYPES = {
+        mahasiswa:   { bg:'#ede9fe', color:'#5b21b6', label:'Mahasiswa baru mendaftar', icon:'🎓' },
+        post:        { bg:'#f3e8ff', color:'#6d28d9', label:'Postingan forum baru',     icon:'💬' },
+        pengumuman: { bg:'#d1fae5', color:'#065f46', label:'Pengumuman dipublikasikan',icon:'📢' },
+        jadwal:      { bg:'#e0f2fe', color:'#0c4a6e', label:'Jadwal ditambahkan',       icon:'📅' },
+        hapus_post: { bg:'#fff1f2', color:'#991b1b', label:'Postingan dihapus',        icon:'🗑' },
+        hapus_user: { bg:'#fff1f2', color:'#991b1b', label:'Akun mahasiswa dihapus',   icon:'🗑' },
     }
 
-    function closeSidebar() {
-      sidebar.classList.remove('open')
-      overlay.classList.remove('open')
-      btn.classList.remove('open')
-      document.body.style.overflow = ''
+    let activities = []
+
+    function pushActivity(item) {
+        activities.unshift({ ...item, _id: Math.random() })
+        activities = activities.slice(0, 30)
+        renderFeed()
     }
 
-    btn?.addEventListener('click', () =>
-      sidebar.classList.contains('open') ? closeSidebar() : openSidebar()
-    )
-    overlay?.addEventListener('click', closeSidebar)
+    function renderFeed() {
+        const el = document.getElementById('activityFeed')
+        if (!activities.length) {
+            el.innerHTML = '<div class="feed-empty"><div class="ei">📭</div><p>Belum ada aktivitas.</p></div>'
+            return
+        }
+        el.innerHTML = activities.slice(0, 15).map((a, i) => {
+            const t = TYPES[a.type] || { bg:'#f3f4f6', color:'#374151', label:'Aktivitas', icon:'🔔' }
+            const av = a.initials
+                ? `<div class="activity-avatar" style="background:${t.bg};color:${t.color}">${a.initials}</div>`
+                : `<div class="activity-avatar" style="background:${t.bg};color:${t.color};font-size:18px">${t.icon}</div>`
+            return `
+                <div class="activity-item" style="animation-delay:${i*.04}s">
+                    ${av}
+                    <div class="activity-body">
+                        <strong>${a.label || t.label}</strong>
+                        <span>${a.desc || ''}</span>
+                    </div>
+                    <span class="activity-time">${timeAgo(a.created_at)}</span>
+                </div>`
+        }).join('')
+    }
 
-    // Tutup sidebar saat nav item diklik di mobile
-    document.querySelectorAll('.sidebar li').forEach(li =>
-      li.addEventListener('click', () => {
-        if (window.innerWidth <= 768) closeSidebar()
-      })
-    )
-  </script>
+    /* ──────────────────────────────────────
+       LOAD DATA
+    ────────────────────────────────────── */
+    async function loadDashboard() {
+        const [admin, mahasiswa, jadwal, pengumuman, posts] = await Promise.all([
+            supabaseClient.from('users').select('*',{count:'exact'}).eq('role','admin'),
+            supabaseClient.from('users').select('*',{count:'exact'}).eq('role','mahasiswa'),
+            supabaseClient.from('schedules').select('*',{count:'exact'}),
+            supabaseClient.from('announcements').select('*',{count:'exact'}),
+            supabaseClient.from('posts').select('*',{count:'exact'}),
+        ])
+        setCount('totalAdmin', admin.count)
+        setCount('totalMahasiswa', mahasiswa.count)
+        setCount('totalJadwal', jadwal.count)
+        setCount('totalPengumuman', pengumuman.count)
+        setCount('totalPost', posts.count)
+
+        try {
+            const s = JSON.parse(localStorage.getItem('ssid'))
+            if (s?.nama) {
+                document.getElementById('greetText').textContent =
+                    `Halo, ${s.nama.split(' ')[0]}! Ini ringkasan aktivitas kampus hari ini.`
+            }
+        } catch {}
+    }
+
+    async function loadRecentActivity() {
+        const [ { data: users }, { data: posts }, { data: announcements } ] = await Promise.all([
+            supabaseClient.from('users').select('id,nama,nim,email,role,created_at').eq('role','mahasiswa').order('created_at',{ascending:false}).limit(5),
+            supabaseClient.from('posts').select('id,isi_post,created_at').order('created_at',{ascending:false}).limit(5),
+            supabaseClient.from('announcements').select('id,judul,tanggal').order('tanggal',{ascending:false}).limit(5),
+        ])
+
+        const items = []
+        if(users) users.forEach(u => items.push({ type: 'mahasiswa', initials: initials(u.nama || u.email), desc: u.nama || u.email, created_at: u.created_at }))
+        if(posts) posts.forEach(p => items.push({ type: 'post', desc: p.isi_post.slice(0,72)+'...', created_at: p.created_at }))
+        if(announcements) announcements.forEach(a => items.push({ type: 'pengumuman', desc: a.judul, created_at: a.tanggal }))
+
+        activities = items.sort((a,b) => new Date(b.created_at) - new Date(a.created_at))
+        renderFeed()
+    }
+
+    /* ──────────────────────────────────────
+       REALTIME SUBSCRIPTIONS
+    ────────────────────────────────────── */
+    function subscribeRealtime() {
+        // Users Change
+        supabaseClient.channel('db-users').on('postgres_changes', { event:'*', schema:'public', table:'users' }, (payload) => {
+            if(payload.eventType === 'INSERT' && payload.new.role === 'mahasiswa') {
+                pushActivity({ type:'mahasiswa', initials:initials(payload.new.nama), desc:payload.new.nama, created_at:payload.new.created_at });
+                bumpCount('totalMahasiswa', 1);
+            } else if(payload.eventType === 'DELETE') {
+                bumpCount('totalMahasiswa', -1);
+            }
+        }).subscribe();
+
+        // Posts Change
+        supabaseClient.channel('db-posts').on('postgres_changes', { event:'*', schema:'public', table:'posts' }, (payload) => {
+            if(payload.eventType === 'INSERT') {
+                pushActivity({ type:'post', desc:payload.new.isi_post.slice(0,72)+'...', created_at:payload.new.created_at });
+                bumpCount('totalPost', 1);
+            } else if (payload.eventType === 'DELETE') {
+                bumpCount('totalPost', -1);
+            }
+        }).subscribe();
+    }
+
+    /* ──────────────────────────────────────
+       LOGOUT HANDLER
+    ────────────────────────────────────── */
+    async function handleLogout() {
+    const sessionRaw = localStorage.getItem('ssid');
+    
+    // UI Feedback: Berikan tanda visual sedang memproses
+    const statusText = document.getElementById('statusText');
+    const statusDot = document.getElementById('statusDot');
+    
+    if (statusText) statusText.textContent = 'Logging out...';
+    if (statusDot) {
+        statusDot.classList.remove('online');
+        statusDot.style.background = '#64748b'; // Abu-abu
+    }
+
+    if (sessionRaw) {
+        try {
+            const sessionData = JSON.parse(sessionRaw);
+            
+            // Update tabel users: Matikan status & hapus session
+            const { error } = await supabaseClient
+                .from('users')
+                .update({ 
+                    status: 'offline',     // Pastikan kolom status diubah ke offline
+                    ssid: null, 
+                    expired_at: null,
+                    last_seen: new Date().toISOString(),
+                    typing_status: false   // Reset status mengetik jika ada
+                })
+                .eq('id', sessionData.id);
+
+            if (error) throw error;
+            console.log("Database updated: User is now offline.");
+        } catch (e) {
+            console.error("Gagal update database saat logout:", e);
+        }
+    }
+
+    // Bersihkan penyimpanan lokal & pindah halaman
+    localStorage.removeItem('ssid');
+    window.location.href = 'login.html';
+}
+    /* ──────────────────────────────────────
+       INITIALIZE
+    ────────────────────────────────────── */
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDashboard();
+        loadRecentActivity();
+        subscribeRealtime();
+        updateOnlineStatus();
+
+        // Intervals
+        setInterval(updateOnlineStatus, 30000); // Update last_seen every 30s
+        setInterval(() => { if (activities.length) renderFeed() }, 30000); // Refresh times
+    });
+
+    // Sidebar Mobile Toggle
+    const btn = document.getElementById('hamburgerBtn');
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    btn?.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+        btn.classList.toggle('open');
+    });
+
+    overlay?.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+        btn.classList.remove('open');
+    });
+    </script>
 </body>
 </html>
